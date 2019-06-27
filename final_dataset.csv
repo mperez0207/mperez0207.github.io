@@ -1,0 +1,25 @@
+Neighborhood,Laundromats,Garages,Citi Bikes,Rent Category
+Battery Park City,1,22,5,High Rent
+Flatiron District,8,34,15,High Rent
+Soho,3,6,6,High Rent
+Tribeca,1,27,15,High Rent
+Chinatown,5,7,4,Low Rent
+East Village,36,8,20,Low Rent
+Hamilton Heights,14,2,0,Low Rent
+Harlem,43,30,25,Low Rent
+Inwood,11,11,0,Low Rent
+Little Italy,8,6,4,Low Rent
+Lower East Side,29,7,28,Low Rent
+Manhattanville,3,5,1,Low Rent
+Morningside Heights,3,7,11,Low Rent
+Roosevelt Island,1,3,0,Low Rent
+Upper East Side,71,262,43,Low Rent
+Washington Heights,53,26,0,Low Rent
+Chelsea,17,49,18,Medium Rent
+Financial District,0,38,18,Medium Rent
+Gramercy,24,57,12,Medium Rent
+Greenwich Village,10,36,16,Medium Rent
+Midtown,1,87,17,Medium Rent
+Stuyvesant Town,4,8,5,Medium Rent
+Upper West Side,46,118,39,Medium Rent
+West Village,13,21,9,Medium Rent

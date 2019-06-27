@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>NYC Rent Predictor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/4.3.1/sketchy/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="index.html">NYC Rent
+            <img class="nav-ufo" src="static/images/ufo.svg">
+          </a>
+        </div>
+      </div>
+    </nav>
+    <div class="hero text-center">
+      <h1 class="text-light">NYC Rent Predictor</h1>
+      <h3 class="text-light">Machine Learning Applied to Real Estate</p>
+    </div>
+    <div class="container">
+      <div class="row margin-top-50">
+        <div class="col-md-10">
+          <div id="table-area" class="">
+
+            <h3>Introduction</h3>
+            <p>
+                Many machine learning problems take the form of predicting a certain outcome or classification based on a set of other known factors. In healthcare, a patient's medical history and vitals can be used to predict certain diagnoses. In astronomy, the mass, the composition, and the orbital shape and frequency of a celestial object can be used to determine whether or not it is an exoplanet.
+                <br>
+                <br>
+                In this project we set out to see if machine learning can be used to predict the rent category (high, medium, low) of a 2-bedroom apartment in New York City.
+                <br>
+            </p>
+
+            <h3>Data sources</h3>
+            <p>
+                Legally operating businesses in the 5 boroughs: <a href="https://opendata.cityofnewyork.us/" target="_blank">https://opendata.cityofnewyork.us/</a>
+                <br>
+                -Laundromats
+                <br>
+                -Parking garages
+                <br>
+                <br>
+                Citi Bikes: <a href="https://feeds.citibikenyc.com/stations/stations.json" target="_blank">https://feeds.citibikenyc.com/stations/stations.json</a>
+                <br>
+                <br>
+                Median 2-BR rent 2010-2019 in the 5 boroughs: <a href="https://streeteasy.com/blog/data-dashboard/" target="_blank">https://streeteasy.com/blog/data-dashboard/</a>
+                <br>
+                <br>
+            </p>
+
+            <h3>Data Cleaning and Reorganization</h3>
+
+            <p>
+                1. We loaded our raw data into several pandas DataFrames, one for each separate feature. We found that there were many repeat coordinates - over time one business might close and another may take over at the same location. We used pandas to quickly and easily drop all rows containing duplicate coordinates. 
+                <br>
+                <br>
+                2. The features we selected (Citi Bike, garages, laundromats) exist as coordinates or boroughs, not specified by neighborhood. Hence we needed to find a way to reverse geocode the coordinates to provide a specific neighborhood. MapBox API was our answer - it provided both neighborhood and borough level information for each set of coordinates we fed to it. Ultimately, we decided to keep only those points which fell into Manhattan. Best to start the project with a small subset of NYC first, then to start adding new features and boroughs once we know the concept works. 
+                <br>
+                <br>
+                Furthermore, it helped us to identify several sets of coordinates in our data that did not actually exist in NYC, hence this contributed to our cleaning of the data as well.
+                <br>
+                <br>
+                3. Finally, for each individual feature (Citi Bike, garages, laundromats) we had obtained the specific neighborhood it was located in. From there it was as simple as calling the value_counts() method on the neighborhood column to see how many of the said feature exists in each neighborhood. 
+                <br>
+                <br>
+                4. We then merged our 3 separate DataFrames into a single DataFrame using the neighborhood name as the unique index. It was at this point that we discovered that the raw data was incomplete. Several neighborhoods showed having 0 laundromats or garages, a result that a quick Google search immediately contradicted. Nonetheless we pressed on, noting this unfortunate fact as a possible reason our predictions may be inaccurate down the road.  
+                <br>
+                <br>
+                <figure>
+                    <img src="features_df_head.png">
+                    <figcaption>Completed features DataFrame</figcaption>
+                </figure>
+                <br>
+                5. With our features DataFrame now complete, now it was time to bring in the rent data for each neighborhood from StreetEasy. StreetEasy had the monthly data for the median rent of every NYC neighborhood. Well, almost every neighborhood. Some neighborhoods had rent data missing from certain months, while other neighborhoods did not have any rent data at all during the entire 2010 - 2019 timespan. Initially we were simply going to use the most recent month's rent data but some neighborhoods were missing data for the most recent month, but may have had data for previous months. So what we then ended up was doing was taking the average of all months data for each neighborhood. This way only those neighborhoods with no rent data whatsoever would be excluded from our dataset, and those with missing data for certain months can be included so long as they had data for other months.
+                <br>
+                <br>
+                Now we had narrowed down our rent data file to Manhattan neighborhoods which had at least one data point.
+                <br>
+                <br>
+                We loaded this data into another pandas DataFrame and merged it with our features DataFrame, again using the neighborhood name as the unique index. 
+                <br>
+                <br>
+                <figure>
+                    <img src="rent_df_head.png">
+                    <figcaption>Completed rent DataFrame</figcaption>
+                </figure>
+                <br>
+                Several of the neighborhood names from the rent data file did not match up exactly with the names from the features file (Flatiron District vs. Flatiron, Battery Park City vs. Battery Park, Gramercy Park vs. Gramercy, etc.) so we had to merge these rows in our final DataFrame manually. 
+                <br>
+                <br>
+                6. Next, we realized that there were several neighborhoods for which there were either features data or rent data, but not both. These rows had to be removed, unfortunately reducing our dataset to just 24 neighborhoods. To sufficiently train, and test, a machine learning model, 24 data points is woefully lacking. Nonetheless, this dataset's purpose is to serve as a prototype. Future models will include more boroughs and neighborhoods, additional features and metrics, as well as square footage for each neighborhood so that we can have a # of features/unit land area per neighborhood, rather than an absolute number of features per neighborhood. 
+                <br>
+                <br>
+                7. Added column of rent categories: high rent (> $6,000), medium rent (> $4,000), low rent (<= $4,000) for each neighborhood and dropped the numerical rent column:
+                <br>
+                <br>
+            </p>
+
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th class="table-head">Neighborhood</th>
+                  <th class="table-head">Laundromats</th>
+                  <th class="table-head">Garages</th>
+                  <th class="table-head">Citi Bikes</th>
+                  <th class="table-head">Rent Category</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+
+            <h3>Machine Learning Model</h3>
+
+            <p>
+              1. We split our DataFrame up between the features used to predict the rent category (laundromats, garages, Citi Bikes), and the rent category column. 
+              <br>
+              <br>
+                <img src="complete_dataset.png">
+              <br>
+
+              <div class="row">
+                <div class="column">
+                    <img src="data_portion.png" style="width:100%">
+                </div>
+                <div class="column">
+                    <img src="rent_column.png" style="width:100%">
+                </div>
+            </div>
+
+            *Note that the neighborhood column was dropped as the name of a neighborhood does not influence the rent value as far as our model is concerned.
+            <br>
+            <br>
+            <br>
+              2. Use sklearn train_test_split() to split up the dataset into training data and testing data. We decided to use 1/3 of our dataset (8 data points) to train the model (supervised learning) and 16 to test it (unsupervised learning):
+              <br>
+              <code>
+                <div style="white-space: pre">
+                    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = 16)
+                </div>
+              </code>
+              <br>
+              3. The Python scikit-learn library provides several machine learning algorithms for classification problems like the one we are dealing with. One such algorithm is implemented in the SVC model, which we chose to use for our project. The SVC model requires 2 statistical inputs (hyper-parameters) known as C and gamma:
+              <br>
+                <code>
+                    <div style="white-space: pre">
+                        model = SVC(kernel='linear')
+                                            
+                        param_grid = {'C': [0.001, 0.01, 0.1, 1, 5, 10],
+                                    'gamma': [0.0001, 0.001, 0.01, 0.1]}
+                        grid = GridSearchCV(model, param_grid, verbose=3)
+                    </div>
+                </code>
+                <br>
+                Since C and gamma can take on a multitude of different values, we use the GridSearchCV() class to exhaustively consider all possible values with the training data and select the optimal combination:
+                <br>
+                <br>
+                <img src="hyper_parameter_tuning_results.PNG">
+              <br>
+              <br>
+              4. Once this is done, the model is trained and ready to be tested:
+              <br>
+              <br>
+              <img src="predict_model.PNG">
+              <br>
+              <br>
+              Running the classification_report() function prints out a summary of the model's prediction results:
+              <br>
+              <br>
+              <img src="classification_report.png">
+              <br>
+              <br>
+
+              <h3>Interpreting the Results</h3>
+
+              Precision: Out of the model's predicted positives, how many were truly positive?
+              <br>
+              <br>
+              Recall: Out of the actual positives, how many were identified by the model as positive?
+              <br>
+              <br>
+
+              <div id="results_graph"></div>
+
+              Based on the above results, we can see that our model is a decent predictor for medium rents, an average predictor for low rents, and a poor predictor for high rents.
+              This is not that surprising of a result given that our dataset only contained 4 high rent neighborhoods (and only 1 was included in the training set). Thus our model may perform better given additional data points.
+            </p>
+
+            <h3>Technologies Used</h3>
+
+            <p>
+                <h4>pandas:</h6> Gave us a easy way to organize, clean, and visualize our data into charts we could merge and split up along a unique index
+                <br>
+                <br>
+                <h4>Bootstrap:</h6> Greatly simplified the process of getting a visually appealing website up and running without having to code every theme and color manually using HTML and CSS
+                <br>
+                <br>
+                <h4>D3.js:</h6> Allowed us to import and read csv file with ease
+                <br>
+                <br>
+                <h4>Plotly.js:</h6> Provided a simple interface to plot graphs onto a webpage
+                <br>
+                <br>
+            </p>
+          </div>
+        </div>
+      </div>      
+    </div>
+    <footer class="footer">
+      <span class="bottom">NYC Rent Predictor</span>
+    </footer>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="static/js/app.js"></script>
+</body>
+
+</html>

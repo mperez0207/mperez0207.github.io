@@ -1,0 +1,4 @@
+Rent Category,precision,recall,support
+High Rent,0,0,3
+Medium Rent,0.78,0.88,8
+Low Rent,0.43,0.6,5
